@@ -5,7 +5,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #include <iostream>
 #include <fstream>
@@ -66,7 +65,7 @@ int GroundTruth(Mat& _originalImage)
             perimeter = 0;
             q1 = 0; q2 = 0; q3 = 0;
 
-            int crossings[rectFilled.height];
+            int* crossings = new int[rectFilled.height];
             for(int j = 0; j < rectFilled.height; j++)
             {
                 crossings[j] = 0;
@@ -76,7 +75,8 @@ int GroundTruth(Mat& _originalImage)
             {
                 for(rx = rectFilled.x - 1; rx <= rectFilled.x + rectFilled.width; rx++)
                 {
-                    if ((bwImage.at<uint8_t>(ry, rx - 1) != bwImage.at<uint8_t>(ry, rx)) && (bwImage.at<uint8_t>(ry, rx - 1) + bwImage.at<uint8_t>(ry, rx) == middleValue + zeroValue))
+                    if ((bwImage.at<uint8_t>(ry, rx - 1) != bwImage.at<uint8_t>(ry, rx))
+                        && (bwImage.at<uint8_t>(ry, rx - 1) + bwImage.at<uint8_t>(ry, rx) == middleValue + zeroValue))
                     {
                         crossings[ry - rectFilled.y]++;
                     }
@@ -115,17 +115,6 @@ int GroundTruth(Mat& _originalImage)
             }
             q1 /= 4;
 
-            /*printf("New region: %d\n", regionsCount);
-            printf("Area: %d\n", (int)pixelsFilled);
-            printf("Bounding box (%d; %d) + (%d; %d)\n", rectFilled.x - 1, rectFilled.y - 1, rectFilled.width, rectFilled.height);
-            printf("Perimeter: %d\n", (int)perimeter);
-            printf("Euler number: %d\n", q1);
-            printf("Crossings: ");
-            for(int j = 0; j < rectFilled.height; j++)
-            {
-                printf("%d ", crossings[j]);
-            }*/
-
             vector<int> m_crossings;
             m_crossings.push_back(crossings[(int)rectFilled.height/6]);
             m_crossings.push_back(crossings[(int)3*rectFilled.height/6]);
@@ -156,7 +145,7 @@ int GroundTruth(Mat& _originalImage)
 
               bool was_convex = false;
               int  num_inflexion_points = 0;
-              for (int p = 0 ; p<contour_poly.size(); p++)
+              for (size_t p = 0 ; p<contour_poly.size(); p++)
               {
                 int p_prev = p-1;
                 int p_next = p+1;
@@ -196,7 +185,7 @@ int GroundTruth(Mat& _originalImage)
 
                 vector<Point> hull;
                 cv::convexHull(contours[0], hull, false);
-                hull_area = contourArea(hull);
+                hull_area = static_cast<int>(contourArea(hull));
               }
 
 		          printf("%f,%f,%f\n",(float)holes_area / pixelsFilled, (float)hull_area / contourArea(contours[0]), (float)num_inflexion_points );
@@ -207,10 +196,11 @@ int GroundTruth(Mat& _originalImage)
               floodFill(bwImage, seedPoint, zeroScalar);
             }
 
+            delete[] crossings;
         }
     }
 
-
+    return 0;
 }
 
 

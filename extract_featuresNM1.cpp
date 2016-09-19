@@ -5,7 +5,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #include <iostream>
 #include <fstream>
@@ -44,7 +43,7 @@ int GroundTruth(Mat& _originalImage)
     int valuesSum, q1, q2, q3;
     bool p00, p10, p01, p11;
 
-    for(int i = 0; i < totalPixelCount; i++)
+    for (int i = 0; i < totalPixelCount; i++)
     {
         if (bwImage.data[i] == maxValue)
         {
@@ -63,7 +62,7 @@ int GroundTruth(Mat& _originalImage)
             perimeter = 0;
             q1 = 0; q2 = 0; q3 = 0;
 
-            int crossings[rectFilled.height];
+            int* crossings = new int[rectFilled.height];
             for(int j = 0; j < rectFilled.height; j++)
             {
                 crossings[j] = 0;
@@ -73,7 +72,8 @@ int GroundTruth(Mat& _originalImage)
             {
                 for(rx = rectFilled.x - 1; rx <= rectFilled.x + rectFilled.width; rx++)
                 {
-                    if ((bwImage.at<uint8_t>(ry, rx - 1) != bwImage.at<uint8_t>(ry, rx)) && (bwImage.at<uint8_t>(ry, rx - 1) + bwImage.at<uint8_t>(ry, rx) == middleValue + zeroValue))
+                    if ((bwImage.at<uint8_t>(ry, rx - 1) != bwImage.at<uint8_t>(ry, rx))
+                        && (bwImage.at<uint8_t>(ry, rx - 1) + bwImage.at<uint8_t>(ry, rx) == middleValue + zeroValue))
                     {
                         crossings[ry - rectFilled.y]++;
                     }
@@ -98,9 +98,15 @@ int GroundTruth(Mat& _originalImage)
                     p11 = bwImage.at<uint8_t>(ry + 1, rx + 1) == middleValue;
                     valuesSum = p00 + p01 + p10 + p11;
 
-                    if (valuesSum == 1) q1++; else
-                    if (valuesSum == 3) q2++; else
-                    if ((valuesSum == 2) && (p00 == p11)) q3++;
+                    if (valuesSum == 1) {
+                        q1++;
+                    } 
+                    else if (valuesSum == 3) {
+                        q2++;
+                    }
+                    else if ((valuesSum == 2) && (p00 == p11)) {
+                        q3++;
+                    }
                 }
             }
 
@@ -112,17 +118,6 @@ int GroundTruth(Mat& _originalImage)
             }
             q1 /= 4;
 
-            /*printf("New region: %d\n", regionsCount);
-            printf("Area: %d\n", (int)pixelsFilled);
-            printf("Bounding box (%d; %d) + (%d; %d)\n", rectFilled.x - 1, rectFilled.y - 1, rectFilled.width, rectFilled.height);
-            printf("Perimeter: %d\n", (int)perimeter);
-            printf("Euler number: %d\n", q1);
-            printf("Crossings: ");
-            for(int j = 0; j < rectFilled.height; j++)
-            {
-                printf("%d ", crossings[j]);
-            }*/
-
             vector<int> m_crossings;
             m_crossings.push_back(crossings[(int)rectFilled.height/6]);
             m_crossings.push_back(crossings[(int)3*rectFilled.height/6]);
@@ -131,14 +126,21 @@ int GroundTruth(Mat& _originalImage)
 
 	   //Features used in the first stage classifier
 	   //aspect ratio (w/h), compactness (sqrt(a/p), number of holes (1 − η), and a horizontal crossings feature (cˆ = median {c_1*w/6, c_3*w/6, c_5*w/6}) which estimates number of character strokes in horizontal projection
-            if ((rectFilled.width>=20)&&(rectFilled.height>=20)) // TODO find a better way to select good negative examples
-		printf("%f,%f,%f,%f\n",(float)rectFilled.width/rectFilled.height, sqrt(pixelsFilled)/perimeter, (float)(1-q1), (float)m_crossings.at(1)); 
+            if ((rectFilled.width >= 20) && (rectFilled.height >= 20)) {
+                // TODO find a better way to select good negative examples
+                printf("%f,%f,%f,%f\n",
+                    (float)rectFilled.width / rectFilled.height,
+                    sqrt(pixelsFilled) / perimeter,
+                    (float)(1 - q1), (float)m_crossings.at(1));
+            }
 
             floodFill(bwImage, seedPoint, zeroScalar);
 
+            delete[] crossings;
         }
     }
 
+    return 0;
 }
 
 
